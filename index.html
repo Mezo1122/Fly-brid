@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة الطيّار - تجربة لعبة مشابهة لـ Flappy Bird</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #70c5ce;
+        }
+        canvas {
+            display: block;
+            background: #4287f5;
+            margin: 20px auto;
+            border: 5px solid #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        .container {
+            text-align: center;
+            color: white;
+        }
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        .credit {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 14px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>مرحبًا بلعبة الطيّار!</h1>
+    <p>استخدم مفتاح المسافة للطيران وتجنب الأعمدة.</p>
+    <canvas id="gameCanvas"></canvas>
+    <div class="credit">مُقدَّم من: Mazen</div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // ضبط حجم اللوحة (الشاشة)
+    canvas.width = window.innerWidth > 400 ? 400 : window.innerWidth;
+    canvas.height = window.innerHeight > 600 ? 600 : window.innerHeight;
+
+    // تعريف الطائر
+    const bird = {
+        x: 50,
+        y: canvas.height / 2,
+        width: 20,
+        height: 20,
+        gravity: 0.5,
+        lift: -10,
+        velocity: 0,
+        color: 'yellow'
+    };
+
+    // تعريف الأعمدة
+    const pipes = [];
+    const pipeWidth = 50;
+    const pipeGap = 150;
+    const pipeColor = 'green';
+
+    let score = 0;
+    let isGameOver = false;
+
+    function drawBird() {
+        ctx.fillStyle = bird.color;
+        ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+    }
+
+    function updateBird() {
+        if (isGameOver) return;
+        bird.velocity += bird.gravity;
+        bird.y += bird.velocity;
+
+        if (bird.y + bird.height >= canvas.height) {
+            bird.y = canvas.height - bird.height;
+            endGame();
+        }
+
+        if (bird.y <= 0) {
+            bird.y = 0;
+            bird.velocity = 0;
+        }
+    }
+
+    function drawPipes() {
+        ctx.fillStyle = pipeColor;
+        for (let pipe of pipes) {
+            ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+            ctx.fillRect(pipe.x, pipe.top + pipeGap, pipeWidth, canvas.height - pipe.top - pipeGap);
+        }
+    }
+
+    function updatePipes() {
+        if (isGameOver) return;
+
+        if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
+            const topHeight = Math.random() * (canvas.height - pipeGap - 50) + 50;
+            pipes.push({ x: canvas.width, top: topHeight });
+        }
+
+        for (let i = 0; i < pipes.length; i++) {
+            const pipe = pipes[i];
+            pipe.x -= 3;
+
+            if (pipe.x + pipeWidth < 0) {
+                pipes.shift();
+                score++;
+            }
+
+            if (
+                bird.x < pipe.x + pipeWidth &&
+                bird.x + bird.width > pipe.x &&
+                (bird.y < pipe.top || bird.y + bird.height > pipe.top + pipeGap)
+            ) {
+                endGame();
+            }
+        }
+    }
+
+    function drawScore() {
+        ctx.fillStyle = 'black';
+        ctx.font = '20px Arial';
+        ctx.fillText(`النقاط: ${score}`, canvas.width - 100, 30);
+    }
+
+    function endGame() {
+        isGameOver = true;
+        alert(`انتهت اللعبة! نقاطك: ${score}`);
+        document.location.reload();
+    }
+
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        drawBird();
+        updateBird();
+
+        drawPipes();
+        updatePipes();
+
+        drawScore();
+
+        if (!isGameOver) requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener('keydown', (event) => {
+        if (event.code === 'Space' && !isGameOver) bird.velocity = bird.lift;
+    });
+
+    gameLoop();
+</script>
+</body>
+</html>
